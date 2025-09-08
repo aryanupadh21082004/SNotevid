@@ -1,0 +1,55 @@
+Hello! I want you to build a complete, multi-page, AI-powered web application called "S-Notevid" from scratch, specifically for the Replit environment. The goal is to help students learn from educational YouTube videos by automatically generating and storing comprehensive study notes.
+
+The application must be modern, visually appealing, responsive, and fully functional.
+
+**1. Overall Page Structure & Navigation:**
+
+The website should have a consistent header and footer across all pages.
+* **Header:** Should contain the logo "S-Notevid 📝" on the left and navigation links on the right for "Home," "About," and a "Logout" button (which only appears if the user is logged in).
+* **Footer:** A clean, dark footer with links to hypothetical "Terms of Service," "Privacy Policy," and social media icons (Twitter, LinkedIn).
+
+**2. Pages to Create:**
+
+* **Login Page (`/login`):**
+    * This should be the first page a new user sees.
+    * It must use **Replit's built-in Repl Auth** for user login. It should be a simple, centered card with a "Login with Replit" button.
+* **Home Page (`/` - Main Application):**
+    * This is the core of the app and should only be accessible after logging in.
+    * It needs a clean input section with a text box for the YouTube URL, a dropdown to select an output language (English, Spanish, Hindi, French, German), and a "Generate Notes" button.
+    * Below the input, there should be a "History" section that displays a list of previously processed videos for the logged-in user, showing the video title and date. Clicking an item should take them to the results page for that video.
+* **Results Page (`/results/{video_id}`):**
+    * This page displays the generated notes. It must have a two-column layout.
+    * **Left Column:** The AI-generated summary, beautifully formatted with a main title, headings, and bullet points.
+    * **Right Column:** A gallery of the key images extracted from the video.
+* **About Page (`/about`):**
+    * A simple, static page explaining what S-Notevid is, its features (AI Summaries, Key Image Extraction, etc.), and its mission to help students.
+
+**3. Core AI and Backend Functionality:**
+
+* **Backend Framework:** Use **Python with the FastAPI framework**.
+* **Database:** Use **Replit DB** (the built-in key-value store). Do not use an external database like MongoDB. Use it to store user-specific history and the cached results of processed videos.
+    * *Data Structure Example:* A key could be `user_{replit_user_id}_video_{video_id}`.
+* **AI Summarization:**
+    * When a user submits a URL, the backend must get the video transcript. It needs robust logic to find a transcript even if the requested language isn't available, by falling back to English or the first available language.
+    * Use the **Google Generative AI API** with the **`gemini-1.5-flash`** model to generate the notes.
+    * The prompt to the AI must instruct it to translate the transcript if necessary and then create high-quality, structured notes in the user's selected language.
+* **Key Image Extraction:**
+    * The backend must identify important moments in the video (based on the AI's output or other heuristics) and extract frames as JPG images. These should be saved to a `static/frames` directory.
+* **Interactive Referencing System (CRITICAL FEATURE):**
+    * The AI's summary text must contain clickable reference markers, like `[1]`, `[2]`, etc.
+    * When a user clicks a reference (e.g., `[1]`), the page must smoothly scroll to the corresponding image in the right-hand column and briefly highlight it (e.g., with a glowing border).
+
+**4. Frontend and UI/UX:**
+
+* **Styling:** Use **Tailwind CSS** (via CDN) for a modern, professional, and fully responsive design that looks great on both desktop and mobile.
+* **Interactivity:** Use vanilla JavaScript for all client-side logic, including the interactive referencing system, showing/hiding loading spinners, and fetching data from the FastAPI backend.
+* **User Experience:** The process must be clear. Show a loading animation while the video is being processed. Handle and display any errors gracefully (e.g., "Invalid YouTube URL," "No transcript available").
+
+**5. Replit Environment Setup:**
+
+* Create all necessary files: `main.py`, a `templates` folder for HTML files, and a `static` folder for CSS, JS, and extracted images.
+* Use a `pyproject.toml` file to manage all Python dependencies (e.g., `fastapi`, `uvicorn`, `yt-dlp`, `youtube-transcript-api`, `google-generativeai`, `opencv-python-headless`, `replit`).
+* Instruct me to add my `GOOGLE_API_KEY` to Replit's "Secrets" tool.
+* The Replit run command should be: `uvicorn main:app --host 0.0.0.0 --port 8080`
+
+Please generate all the code for this complete, production-ready application.
