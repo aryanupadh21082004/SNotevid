@@ -36,7 +36,7 @@ export const users = pgTable("users", {
 // Video processing results
 export const videos = pgTable("videos", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  youtubeId: varchar("youtube_id").notNull(),
+  youtubeId: varchar("youtube_id").notNull().unique(),
   title: text("title").notNull(),
   duration: varchar("duration"),
   thumbnailUrl: text("thumbnail_url"),
