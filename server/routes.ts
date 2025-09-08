@@ -105,9 +105,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get transcript
-      const transcript = await getVideoTranscript(youtubeId, language);
+      let transcript = await getVideoTranscript(youtubeId, language);
+      
+      // If no transcript available, provide a demo transcript for testing
       if (!transcript) {
-        return res.status(404).json({ message: "No transcript available for this video" });
+        if (req.body.demo || youtubeId === 'demo123') {
+          transcript = `This is a demo educational video about artificial intelligence and machine learning. 
+          
+          In this video, we explore the fundamentals of AI and how machine learning algorithms work. We start by understanding what artificial intelligence means - it's the simulation of human intelligence processes by machines, especially computer systems.
+
+          Machine learning is a subset of AI that enables computers to learn and improve from experience without being explicitly programmed. There are three main types of machine learning: supervised learning, unsupervised learning, and reinforcement learning.
+
+          Supervised learning uses labeled training data to learn a mapping function from input variables to output variables. Common examples include email spam detection and image recognition.
+
+          Unsupervised learning finds hidden patterns in data without labeled examples. Clustering and association are popular unsupervised learning techniques.
+
+          Reinforcement learning is about taking suitable actions to maximize reward in a particular situation. It's used in game playing, robotics, and autonomous vehicles.
+
+          Deep learning, which uses neural networks with multiple layers, has revolutionized fields like computer vision and natural language processing. Applications include self-driving cars, voice assistants, and medical diagnosis.
+
+          The future of AI holds great promise but also challenges around ethics, job displacement, and ensuring AI systems are safe and beneficial for humanity.`;
+        } else {
+          return res.status(404).json({ message: "No transcript available for this video. Try adding '?demo=true' to test with sample content." });
+        }
       }
 
       // Generate notes with AI
