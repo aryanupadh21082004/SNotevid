@@ -1,0 +1,953 @@
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S-Notevid 📝 - AI-Powered Educational Notes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                borderRadius: {
+                    lg: "var(--radius)",
+                    md: "calc(var(--radius) - 2px)",
+                    sm: "calc(var(--radius) - 4px)",
+                },
+                colors: {
+                    background: "var(--background)",
+                    foreground: "var(--foreground)",
+                    card: {
+                        DEFAULT: "var(--card)",
+                        foreground: "var(--card-foreground)",
+                    },
+                    primary: {
+                        DEFAULT: "var(--primary)",
+                        foreground: "var(--primary-foreground)",
+                    },
+                    secondary: {
+                        DEFAULT: "var(--secondary)",
+                        foreground: "var(--secondary-foreground)",
+                    },
+                    muted: {
+                        DEFAULT: "var(--muted)",
+                        foreground: "var(--muted-foreground)",
+                    },
+                    accent: {
+                        DEFAULT: "var(--accent)",
+                        foreground: "var(--accent-foreground)",
+                    },
+                    destructive: {
+                        DEFAULT: "var(--destructive)",
+                        foreground: "var(--destructive-foreground)",
+                    },
+                    border: "var(--border)",
+                    input: "var(--input)",
+                    ring: "var(--ring)",
+                },
+                fontFamily: {
+                    sans: ["Inter", "system-ui", "sans-serif"],
+                }
+            },
+        }
+    };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --radius: 8px;
+            /* Light mode */
+            --background: hsl(210 40% 98%);
+            --foreground: hsl(222.2 84% 4.9%);
+            --card: hsl(0 0% 100%);
+            --card-foreground: hsl(222.2 84% 4.9%);
+            --primary: hsl(221.2 83.2% 53.3%);
+            --primary-foreground: hsl(210 40% 98%);
+            --secondary: hsl(160 84.1% 39.4%);
+            --secondary-foreground: hsl(210 40% 98%);
+            --muted: hsl(210 40% 96%);
+            --muted-foreground: hsl(215.4 16.3% 46.9%);
+            --accent: hsl(43.3 96.4% 56.3%);
+            --accent-foreground: hsl(222.2 84% 4.9%);
+            --destructive: hsl(0 72.2% 50.6%);
+            --destructive-foreground: hsl(210 40% 98%);
+            --border: hsl(214.3 31.8% 91.4%);
+            --input: hsl(214.3 31.8% 91.4%);
+            --ring: hsl(221.2 83.2% 53.3%);
+        }
+        
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        
+        .page {
+            display: none;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        .highlight-image {
+            animation: highlightPulse 2s ease-in-out;
+        }
+        
+        @keyframes highlightPulse {
+            0%, 100% { box-shadow: 0 0 0 0px hsl(var(--primary)); }
+            50% { box-shadow: 0 0 0 8px hsl(var(--primary) / 0.3); }
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid hsl(var(--muted));
+            border-top: 4px solid hsl(var(--primary));
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .reference-marker {
+            background: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-block;
+            margin: 0 2px;
+        }
+        
+        .reference-marker:hover {
+            background: hsl(var(--primary) / 0.8);
+            transform: translateY(-1px);
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, hsl(var(--primary) / 0.1) 0%, hsl(var(--secondary) / 0.1) 100%);
+        }
+        
+        .hero-pattern {
+            background-image: 
+                radial-gradient(circle at 25px 25px, hsl(var(--primary) / 0.05) 2px, transparent 0),
+                radial-gradient(circle at 75px 75px, hsl(var(--secondary) / 0.05) 2px, transparent 0);
+            background-size: 100px 100px;
+        }
+    </style>
+</head>
+<body class="bg-background text-foreground min-h-screen">
+    <!-- Header -->
+    <!-- @COMPONENT: Header [navigation, logo, auth state] -->
+    <header class="sticky top-0 z-50 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 border-b border-border">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-4">
+                    <h1 class="text-2xl font-bold text-primary cursor-pointer" onclick="showPage('home')">
+                        S-Notevid 📝
+                    </h1>
+                </div>
+                <nav class="hidden md:flex items-center space-x-8">
+                    <a href="#" onclick="showPage('home')" class="text-foreground hover:text-primary transition-colors font-medium" id="home-nav">Home</a>
+                    <a href="#" onclick="showPage('about')" class="text-muted-foreground hover:text-primary transition-colors font-medium">About</a>
+                    <button id="logout-btn" class="bg-destructive text-destructive-foreground px-4 py-2 rounded-md hover:bg-destructive/90 transition-colors font-medium" style="display: none;" onclick="logout()">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </button>
+                </nav>
+                <button class="md:hidden" onclick="toggleMobileMenu()">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="md:hidden hidden bg-card border-t border-border">
+            <div class="px-4 py-2 space-y-2">
+                <a href="#" onclick="showPage('home')" class="block py-2 text-foreground hover:text-primary transition-colors font-medium">Home</a>
+                <a href="#" onclick="showPage('about')" class="block py-2 text-muted-foreground hover:text-primary transition-colors font-medium">About</a>
+                <button id="mobile-logout-btn" class="w-full text-left py-2 text-destructive hover:text-destructive/80 transition-colors font-medium" style="display: none;" onclick="logout()">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </button>
+            </div>
+        </div>
+    </header>
+    <!-- @END_COMPONENT: Header -->
+
+    <main class="flex-1">
+        <!-- Login Page -->
+        <!-- @COMPONENT: LoginPage [Replit Auth integration] -->
+        <div id="login-page" class="page active">
+            <div class="min-h-[calc(100vh-4rem)] flex items-center justify-center gradient-bg hero-pattern">
+                <div class="w-full max-w-md mx-auto px-4">
+                    <div class="bg-card rounded-xl shadow-xl p-8 border border-border">
+                        <div class="text-center mb-8">
+                            <div class="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
+                                <i class="fas fa-graduation-cap text-2xl text-primary"></i>
+                            </div>
+                            <h2 class="text-3xl font-bold text-foreground mb-2">Welcome to S-Notevid</h2>
+                            <p class="text-muted-foreground">Transform YouTube videos into comprehensive study notes with AI</p>
+                        </div>
+                        
+                        <button onclick="login()" class="w-full bg-primary text-primary-foreground py-3 px-6 rounded-lg hover:bg-primary/90 transition-colors font-semibold flex items-center justify-center space-x-3">
+                            <i class="fas fa-play text-lg"></i>
+                            <span>Login with Replit</span>
+                        </button>
+                        
+                        <div class="mt-6 pt-6 border-t border-border">
+                            <div class="grid grid-cols-3 gap-4 text-center">
+                                <div>
+                                    <div class="inline-flex items-center justify-center w-10 h-10 bg-secondary/10 rounded-full mb-2">
+                                        <i class="fas fa-robot text-secondary"></i>
+                                    </div>
+                                    <p class="text-xs text-muted-foreground font-medium">AI Summaries</p>
+                                </div>
+                                <div>
+                                    <div class="inline-flex items-center justify-center w-10 h-10 bg-accent/10 rounded-full mb-2">
+                                        <i class="fas fa-images text-accent"></i>
+                                    </div>
+                                    <p class="text-xs text-muted-foreground font-medium">Key Images</p>
+                                </div>
+                                <div>
+                                    <div class="inline-flex items-center justify-center w-10 h-10 bg-primary/10 rounded-full mb-2">
+                                        <i class="fas fa-language text-primary"></i>
+                                    </div>
+                                    <p class="text-xs text-muted-foreground font-medium">Multi-language</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: LoginPage -->
+
+        <!-- Home Page -->
+        <!-- @COMPONENT: HomePage [URL input, language selection, history] -->
+        <div id="home-page" class="page">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <!-- Hero Section -->
+                <div class="text-center mb-12">
+                    <h1 class="text-4xl md:text-6xl font-bold text-foreground mb-4">
+                        Learn Smarter with 
+                        <span class="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">AI Notes</span>
+                    </h1>
+                    <p class="text-xl text-muted-foreground max-w-2xl mx-auto">
+                        Transform any YouTube educational video into comprehensive, structured study notes with intelligent image extraction
+                    </p>
+                </div>
+
+                <!-- Input Section -->
+                <div class="max-w-4xl mx-auto mb-12">
+                    <div class="bg-card rounded-xl shadow-lg border border-border p-6 md:p-8">
+                        <h2 class="text-2xl font-bold text-foreground mb-6">Generate Notes from Video</h2>
+                        
+                        <div class="space-y-6">
+                            <!-- URL Input -->
+                            <div>
+                                <label for="youtube-url" class="block text-sm font-medium text-foreground mb-2">
+                                    YouTube Video URL
+                                </label>
+                                <div class="relative">
+                                    <input 
+                                        type="url" 
+                                        id="youtube-url" 
+                                        data-mock="true"
+                                        placeholder="https://www.youtube.com/watch?v=..." 
+                                        class="w-full px-4 py-3 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring bg-background text-foreground placeholder:text-muted-foreground transition-colors"
+                                    >
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                                        <i class="fas fa-link text-muted-foreground"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Language Selection -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="language-select" class="block text-sm font-medium text-foreground mb-2">
+                                        Output Language
+                                    </label>
+                                    <div class="relative">
+                                        <select 
+                                            id="language-select" 
+                                            data-mock="true"
+                                            class="w-full px-4 py-3 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-ring bg-background text-foreground appearance-none cursor-pointer transition-colors"
+                                        >
+                                            <option value="en">English</option>
+                                            <option value="es">Spanish</option>
+                                            <option value="hi">Hindi</option>
+                                            <option value="fr">French</option>
+                                            <option value="de">German</option>
+                                        </select>
+                                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                            <i class="fas fa-chevron-down text-muted-foreground"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Generate Button -->
+                                <div class="flex items-end">
+                                    <button 
+                                        onclick="generateNotes()" 
+                                        data-event="click:handleGenerateNotes"
+                                        class="w-full bg-primary text-primary-foreground py-3 px-6 rounded-lg hover:bg-primary/90 transition-all font-semibold flex items-center justify-center space-x-2 transform hover:scale-[1.02]"
+                                    >
+                                        <i class="fas fa-magic"></i>
+                                        <span>Generate Notes</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Loading State -->
+                        <div id="loading-section" class="hidden mt-8 p-6 bg-muted/50 rounded-lg text-center">
+                            <div class="loading-spinner mx-auto mb-4"></div>
+                            <p class="text-muted-foreground font-medium">Processing video... This may take a few minutes</p>
+                            <p class="text-sm text-muted-foreground mt-2">Extracting transcript, generating notes, and capturing key frames</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Section -->
+                <!-- @COMPONENT: HistorySection [user's processed videos] -->
+                <div class="max-w-4xl mx-auto">
+                    <div class="bg-card rounded-xl shadow-lg border border-border p-6 md:p-8">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-2xl font-bold text-foreground">Recent Notes</h2>
+                            <i class="fas fa-history text-muted-foreground"></i>
+                        </div>
+                        
+                        <div class="space-y-4" data-mock="true">
+                            <!-- @MAP: userHistory.map(item => ( -->
+                            <div onclick="showResults('video1')" class="group bg-background hover:bg-muted/50 p-4 rounded-lg border border-border cursor-pointer transition-all hover:shadow-md">
+                                <div class="flex items-center space-x-4">
+                                    <!-- Video thumbnail placeholder with modern education image -->
+                                    <img src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=60" 
+                                         alt="Calculus fundamentals lecture" 
+                                         class="w-16 h-10 object-cover rounded-md">
+                                    <div class="flex-1">
+                                        <h3 class="font-semibold text-foreground group-hover:text-primary transition-colors" data-bind="item.title">Introduction to Calculus - Derivatives and Limits</h3>
+                                        <div class="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
+                                            <span data-bind="item.date">March 15, 2024</span>
+                                            <span data-bind="item.language">English</span>
+                                            <span class="flex items-center space-x-1">
+                                                <i class="fas fa-clock text-xs"></i>
+                                                <span data-bind="item.duration">45 min</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-arrow-right text-muted-foreground group-hover:text-primary group-hover:transform group-hover:translate-x-1 transition-all"></i>
+                                </div>
+                            </div>
+
+                            <div onclick="showResults('video2')" class="group bg-background hover:bg-muted/50 p-4 rounded-lg border border-border cursor-pointer transition-all hover:shadow-md">
+                                <div class="flex items-center space-x-4">
+                                    <!-- Physics lecture image -->
+                                    <img src="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=60" 
+                                         alt="Quantum physics visualization" 
+                                         class="w-16 h-10 object-cover rounded-md">
+                                    <div class="flex-1">
+                                        <h3 class="font-semibold text-foreground group-hover:text-primary transition-colors" data-bind="item.title">Quantum Mechanics: Wave-Particle Duality</h3>
+                                        <div class="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
+                                            <span data-bind="item.date">March 12, 2024</span>
+                                            <span data-bind="item.language">English</span>
+                                            <span class="flex items-center space-x-1">
+                                                <i class="fas fa-clock text-xs"></i>
+                                                <span data-bind="item.duration">38 min</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-arrow-right text-muted-foreground group-hover:text-primary group-hover:transform group-hover:translate-x-1 transition-all"></i>
+                                </div>
+                            </div>
+
+                            <div onclick="showResults('video3')" class="group bg-background hover:bg-muted/50 p-4 rounded-lg border border-border cursor-pointer transition-all hover:shadow-md">
+                                <div class="flex items-center space-x-4">
+                                    <!-- Biology/DNA image -->
+                                    <img src="https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=60" 
+                                         alt="DNA structure molecular biology" 
+                                         class="w-16 h-10 object-cover rounded-md">
+                                    <div class="flex-1">
+                                        <h3 class="font-semibold text-foreground group-hover:text-primary transition-colors" data-bind="item.title">DNA Replication and Protein Synthesis</h3>
+                                        <div class="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
+                                            <span data-bind="item.date">March 10, 2024</span>
+                                            <span data-bind="item.language">Spanish</span>
+                                            <span class="flex items-center space-x-1">
+                                                <i class="fas fa-clock text-xs"></i>
+                                                <span data-bind="item.duration">52 min</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-arrow-right text-muted-foreground group-hover:text-primary group-hover:transform group-hover:translate-x-1 transition-all"></i>
+                                </div>
+                            </div>
+                            <!-- @END_MAP )) -->
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: HistorySection -->
+            </div>
+        </div>
+        <!-- @END_COMPONENT: HomePage -->
+
+        <!-- Results Page -->
+        <!-- @COMPONENT: ResultsPage [two-column layout with notes and images] -->
+        <div id="results-page" class="page">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <!-- Video Header -->
+                <div class="mb-8">
+                    <button onclick="showPage('home')" class="flex items-center space-x-2 text-muted-foreground hover:text-primary transition-colors mb-4">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>Back to Home</span>
+                    </button>
+                    <div class="bg-card rounded-xl shadow-lg border border-border p-6">
+                        <div class="flex items-start space-x-4">
+                            <!-- Large video thumbnail -->
+                            <img src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=200&h=120" 
+                                 alt="Educational video thumbnail" 
+                                 class="w-32 h-20 md:w-48 md:h-28 object-cover rounded-lg flex-shrink-0">
+                            <div class="flex-1">
+                                <h1 class="text-2xl md:text-3xl font-bold text-foreground mb-2" data-bind="video.title">Introduction to Calculus - Derivatives and Limits</h1>
+                                <div class="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                                    <span class="flex items-center space-x-1">
+                                        <i class="fas fa-calendar"></i>
+                                        <span data-bind="video.processedDate">March 15, 2024</span>
+                                    </span>
+                                    <span class="flex items-center space-x-1">
+                                        <i class="fas fa-language"></i>
+                                        <span data-bind="video.language">English</span>
+                                    </span>
+                                    <span class="flex items-center space-x-1">
+                                        <i class="fas fa-clock"></i>
+                                        <span data-bind="video.duration">45 minutes</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Two Column Layout -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Left Column - Notes -->
+                    <!-- @COMPONENT: NotesColumn [AI-generated structured notes] -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-card rounded-xl shadow-lg border border-border p-6 md:p-8">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-2xl font-bold text-foreground">Study Notes</h2>
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-robot text-primary"></i>
+                                    <span class="text-sm text-muted-foreground font-medium">AI Generated</span>
+                                </div>
+                            </div>
+                            
+                            <div class="prose prose-lg max-w-none" data-mock="true">
+                                <h3 class="text-xl font-semibold text-foreground mb-4 flex items-center">
+                                    <i class="fas fa-lightbulb text-accent mr-2"></i>
+                                    Key Concepts Overview
+                                </h3>
+                                
+                                <div class="space-y-6">
+                                    <div class="bg-muted/30 p-4 rounded-lg">
+                                        <h4 class="font-semibold text-foreground mb-2">1. Understanding Derivatives</h4>
+                                        <p class="text-muted-foreground">
+                                            A derivative represents the rate of change of a function at any given point. 
+                                            It's fundamental to calculus and has wide applications in physics, economics, 
+                                            and engineering <span class="reference-marker" onclick="highlightImage('image-1')">[1]</span>.
+                                        </p>
+                                        <ul class="list-disc list-inside mt-2 text-muted-foreground space-y-1">
+                                            <li>Geometric interpretation: slope of tangent line</li>
+                                            <li>Physical interpretation: instantaneous velocity</li>
+                                            <li>Notation: f'(x), dy/dx, or Df</li>
+                                        </ul>
+                                    </div>
+
+                                    <div class="bg-muted/30 p-4 rounded-lg">
+                                        <h4 class="font-semibold text-foreground mb-2">2. The Concept of Limits</h4>
+                                        <p class="text-muted-foreground">
+                                            Limits describe the behavior of functions as they approach specific values. 
+                                            They form the foundation for defining derivatives and integrals 
+                                            <span class="reference-marker" onclick="highlightImage('image-2')">[2]</span>.
+                                        </p>
+                                        <ul class="list-disc list-inside mt-2 text-muted-foreground space-y-1">
+                                            <li>Left-hand and right-hand limits</li>
+                                            <li>Continuity and discontinuity</li>
+                                            <li>L'Hôpital's rule for indeterminate forms</li>
+                                        </ul>
+                                    </div>
+
+                                    <div class="bg-muted/30 p-4 rounded-lg">
+                                        <h4 class="font-semibold text-foreground mb-2">3. Differentiation Rules</h4>
+                                        <p class="text-muted-foreground">
+                                            Several key rules simplify the process of finding derivatives for complex functions 
+                                            <span class="reference-marker" onclick="highlightImage('image-3')">[3]</span>.
+                                        </p>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                                            <div class="bg-background p-3 rounded">
+                                                <h5 class="font-medium text-foreground">Power Rule</h5>
+                                                <p class="text-sm text-muted-foreground">d/dx[x^n] = nx^(n-1)</p>
+                                            </div>
+                                            <div class="bg-background p-3 rounded">
+                                                <h5 class="font-medium text-foreground">Product Rule</h5>
+                                                <p class="text-sm text-muted-foreground">(fg)' = f'g + fg'</p>
+                                            </div>
+                                            <div class="bg-background p-3 rounded">
+                                                <h5 class="font-medium text-foreground">Chain Rule</h5>
+                                                <p class="text-sm text-muted-foreground">(f(g(x)))' = f'(g(x))·g'(x)</p>
+                                            </div>
+                                            <div class="bg-background p-3 rounded">
+                                                <h5 class="font-medium text-foreground">Quotient Rule</h5>
+                                                <p class="text-sm text-muted-foreground">(f/g)' = (f'g - fg')/g²</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-muted/30 p-4 rounded-lg">
+                                        <h4 class="font-semibold text-foreground mb-2">4. Real-World Applications</h4>
+                                        <p class="text-muted-foreground">
+                                            Calculus concepts apply across numerous fields and practical scenarios 
+                                            <span class="reference-marker" onclick="highlightImage('image-4')">[4]</span>.
+                                        </p>
+                                        <ul class="list-disc list-inside mt-2 text-muted-foreground space-y-1">
+                                            <li><strong>Physics:</strong> Velocity, acceleration, and optimization problems</li>
+                                            <li><strong>Economics:</strong> Marginal cost, revenue, and profit analysis</li>
+                                            <li><strong>Engineering:</strong> Signal processing and system optimization</li>
+                                            <li><strong>Biology:</strong> Population growth models and pharmacokinetics</li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div class="mt-8 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                                    <h4 class="font-semibold text-primary mb-2 flex items-center">
+                                        <i class="fas fa-key mr-2"></i>
+                                        Key Takeaways
+                                    </h4>
+                                    <ul class="space-y-2 text-muted-foreground">
+                                        <li>• Derivatives measure instantaneous rates of change</li>
+                                        <li>• Limits provide the mathematical foundation for calculus</li>
+                                        <li>• Differentiation rules enable calculation of complex derivatives</li>
+                                        <li>• Applications span multiple disciplines and real-world scenarios</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- @END_COMPONENT: NotesColumn -->
+
+                    <!-- Right Column - Images -->
+                    <!-- @COMPONENT: ImageGallery [extracted key frames with highlighting] -->
+                    <div class="lg:col-span-1">
+                        <div class="bg-card rounded-xl shadow-lg border border-border p-6 sticky top-24">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="text-lg font-semibold text-foreground">Key Visuals</h3>
+                                <i class="fas fa-images text-muted-foreground"></i>
+                            </div>
+                            
+                            <div class="space-y-4" data-mock="true">
+                                <!-- Mathematical formula visualization -->
+                                <div id="image-1" class="image-frame">
+                                    <img src="https://images.unsplash.com/photo-1635070041078-e363dbe005cb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=250" 
+                                         alt="Mathematical formulas and equations on blackboard" 
+                                         class="w-full h-32 object-cover rounded-lg border border-border">
+                                    <div class="mt-2">
+                                        <span class="inline-flex items-center px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">
+                                            [1] Derivative Formula
+                                        </span>
+                                        <p class="text-sm text-muted-foreground mt-1">Visual representation of derivative calculations</p>
+                                    </div>
+                                </div>
+
+                                <!-- Graph visualization -->
+                                <div id="image-2" class="image-frame">
+                                    <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=250" 
+                                         alt="Mathematical graphs showing limits and continuity" 
+                                         class="w-full h-32 object-cover rounded-lg border border-border">
+                                    <div class="mt-2">
+                                        <span class="inline-flex items-center px-2 py-1 text-xs font-medium bg-secondary/10 text-secondary rounded-full">
+                                            [2] Limit Behavior
+                                        </span>
+                                        <p class="text-sm text-muted-foreground mt-1">Graph demonstrating limit approaching behavior</p>
+                                    </div>
+                                </div>
+
+                                <!-- Rule examples -->
+                                <div id="image-3" class="image-frame">
+                                    <img src="https://images.unsplash.com/photo-1509228468518-180dd4864904?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=250" 
+                                         alt="Mathematical equations and differentiation rules written on paper" 
+                                         class="w-full h-32 object-cover rounded-lg border border-border">
+                                    <div class="mt-2">
+                                        <span class="inline-flex items-center px-2 py-1 text-xs font-medium bg-accent/10 text-accent rounded-full">
+                                            [3] Differentiation Rules
+                                        </span>
+                                        <p class="text-sm text-muted-foreground mt-1">Step-by-step rule applications</p>
+                                    </div>
+                                </div>
+
+                                <!-- Applications visualization -->
+                                <div id="image-4" class="image-frame">
+                                    <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=400&h=250" 
+                                         alt="Data analytics and real-world application charts" 
+                                         class="w-full h-32 object-cover rounded-lg border border-border">
+                                    <div class="mt-2">
+                                        <span class="inline-flex items-center px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">
+                                            [4] Applications
+                                        </span>
+                                        <p class="text-sm text-muted-foreground mt-1">Real-world calculus applications</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- @END_COMPONENT: ImageGallery -->
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: ResultsPage -->
+
+        <!-- About Page -->
+        <!-- @COMPONENT: AboutPage [static information about the application] -->
+        <div id="about-page" class="page">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <!-- Hero Section -->
+                <div class="text-center mb-16">
+                    <div class="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-full mb-6">
+                        <i class="fas fa-graduation-cap text-3xl text-primary"></i>
+                    </div>
+                    <h1 class="text-4xl md:text-6xl font-bold text-foreground mb-6">
+                        About S-Notevid
+                    </h1>
+                    <p class="text-xl text-muted-foreground max-w-3xl mx-auto">
+                        Revolutionizing the way students learn from educational videos through AI-powered note generation and intelligent content extraction
+                    </p>
+                </div>
+
+                <!-- Mission Section -->
+                <div class="max-w-4xl mx-auto mb-16">
+                    <div class="bg-card rounded-xl shadow-lg border border-border p-8 md:p-12">
+                        <h2 class="text-3xl font-bold text-foreground mb-6 text-center">Our Mission</h2>
+                        <p class="text-lg text-muted-foreground text-center leading-relaxed">
+                            S-Notevid bridges the gap between passive video consumption and active learning. 
+                            We believe that every educational video contains valuable insights that can be 
+                            transformed into structured, comprehensive study materials that enhance retention and understanding.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Features Grid -->
+                <div class="max-w-6xl mx-auto mb-16">
+                    <h2 class="text-3xl font-bold text-foreground text-center mb-12">Powerful Features</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <!-- Feature 1 -->
+                        <div class="bg-card rounded-xl shadow-lg border border-border p-6 hover:shadow-xl transition-shadow">
+                            <div class="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-lg mb-4">
+                                <i class="fas fa-robot text-2xl text-primary"></i>
+                            </div>
+                            <h3 class="text-xl font-semibold text-foreground mb-3">AI-Powered Summaries</h3>
+                            <p class="text-muted-foreground">
+                                Advanced AI analyzes video content to generate comprehensive, structured notes 
+                                with key concepts, definitions, and takeaways.
+                            </p>
+                        </div>
+
+                        <!-- Feature 2 -->
+                        <div class="bg-card rounded-xl shadow-lg border border-border p-6 hover:shadow-xl transition-shadow">
+                            <div class="inline-flex items-center justify-center w-12 h-12 bg-secondary/10 rounded-lg mb-4">
+                                <i class="fas fa-images text-2xl text-secondary"></i>
+                            </div>
+                            <h3 class="text-xl font-semibold text-foreground mb-3">Key Image Extraction</h3>
+                            <p class="text-muted-foreground">
+                                Automatically identifies and captures important visual elements, 
+                                diagrams, and key frames that support the learning material.
+                            </p>
+                        </div>
+
+                        <!-- Feature 3 -->
+                        <div class="bg-card rounded-xl shadow-lg border border-border p-6 hover:shadow-xl transition-shadow">
+                            <div class="inline-flex items-center justify-center w-12 h-12 bg-accent/10 rounded-lg mb-4">
+                                <i class="fas fa-language text-2xl text-accent"></i>
+                            </div>
+                            <h3 class="text-xl font-semibold text-foreground mb-3">Multi-Language Support</h3>
+                            <p class="text-muted-foreground">
+                                Generate notes in multiple languages including English, Spanish, Hindi, 
+                                French, and German with intelligent translation capabilities.
+                            </p>
+                        </div>
+
+                        <!-- Feature 4 -->
+                        <div class="bg-card rounded-xl shadow-lg border border-border p-6 hover:shadow-xl transition-shadow">
+                            <div class="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-lg mb-4">
+                                <i class="fas fa-link text-2xl text-primary"></i>
+                            </div>
+                            <h3 class="text-xl font-semibold text-foreground mb-3">Interactive References</h3>
+                            <p class="text-muted-foreground">
+                                Click reference markers in notes to instantly view corresponding visual 
+                                elements, creating an interactive study experience.
+                            </p>
+                        </div>
+
+                        <!-- Feature 5 -->
+                        <div class="bg-card rounded-xl shadow-lg border border-border p-6 hover:shadow-xl transition-shadow">
+                            <div class="inline-flex items-center justify-center w-12 h-12 bg-secondary/10 rounded-lg mb-4">
+                                <i class="fas fa-history text-2xl text-secondary"></i>
+                            </div>
+                            <h3 class="text-xl font-semibold text-foreground mb-3">Personal History</h3>
+                            <p class="text-muted-foreground">
+                                Keep track of all processed videos and access your generated notes 
+                                anytime with a comprehensive personal history.
+                            </p>
+                        </div>
+
+                        <!-- Feature 6 -->
+                        <div class="bg-card rounded-xl shadow-lg border border-border p-6 hover:shadow-xl transition-shadow">
+                            <div class="inline-flex items-center justify-center w-12 h-12 bg-accent/10 rounded-lg mb-4">
+                                <i class="fas fa-mobile-alt text-2xl text-accent"></i>
+                            </div>
+                            <h3 class="text-xl font-semibold text-foreground mb-3">Responsive Design</h3>
+                            <p class="text-muted-foreground">
+                                Access your study notes on any device with a fully responsive, 
+                                mobile-optimized interface that works everywhere.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- How It Works -->
+                <div class="max-w-4xl mx-auto mb-16">
+                    <h2 class="text-3xl font-bold text-foreground text-center mb-12">How It Works</h2>
+                    <div class="space-y-8">
+                        <div class="flex items-center space-x-6">
+                            <div class="flex-shrink-0 w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-lg">1</div>
+                            <div class="flex-1">
+                                <h3 class="text-xl font-semibold text-foreground mb-2">Submit Video URL</h3>
+                                <p class="text-muted-foreground">Paste any educational YouTube video URL and select your preferred output language.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center space-x-6">
+                            <div class="flex-shrink-0 w-12 h-12 bg-secondary text-secondary-foreground rounded-full flex items-center justify-center font-bold text-lg">2</div>
+                            <div class="flex-1">
+                                <h3 class="text-xl font-semibold text-foreground mb-2">AI Processing</h3>
+                                <p class="text-muted-foreground">Our AI extracts the transcript, analyzes content, and identifies key visual moments.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center space-x-6">
+                            <div class="flex-shrink-0 w-12 h-12 bg-accent text-accent-foreground rounded-full flex items-center justify-center font-bold text-lg">3</div>
+                            <div class="flex-1">
+                                <h3 class="text-xl font-semibold text-foreground mb-2">Note Generation</h3>
+                                <p class="text-muted-foreground">Comprehensive, structured study notes are generated with interactive references to key visuals.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center space-x-6">
+                            <div class="flex-shrink-0 w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-lg">4</div>
+                            <div class="flex-1">
+                                <h3 class="text-xl font-semibold text-foreground mb-2">Study & Review</h3>
+                                <p class="text-muted-foreground">Access your notes anytime, click references to view related images, and enhance your learning.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Technical Stack -->
+                <div class="max-w-4xl mx-auto">
+                    <div class="bg-card rounded-xl shadow-lg border border-border p-8">
+                        <h2 class="text-2xl font-bold text-foreground text-center mb-8">Built with Modern Technology</h2>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                            <div class="space-y-2">
+                                <i class="fab fa-python text-3xl text-primary"></i>
+                                <p class="text-sm font-medium text-foreground">Python & FastAPI</p>
+                            </div>
+                            <div class="space-y-2">
+                                <i class="fas fa-brain text-3xl text-secondary"></i>
+                                <p class="text-sm font-medium text-foreground">Google Gemini AI</p>
+                            </div>
+                            <div class="space-y-2">
+                                <i class="fab fa-youtube text-3xl text-accent"></i>
+                                <p class="text-sm font-medium text-foreground">YouTube API</p>
+                            </div>
+                            <div class="space-y-2">
+                                <i class="fas fa-database text-3xl text-muted-foreground"></i>
+                                <p class="text-sm font-medium text-foreground">Replit DB</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: AboutPage -->
+    </main>
+
+    <!-- Footer -->
+    <!-- @COMPONENT: Footer [consistent across all pages] -->
+    <footer class="bg-card border-t border-border mt-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex flex-col md:flex-row items-center justify-between">
+                <div class="flex items-center space-x-4 mb-4 md:mb-0">
+                    <h3 class="text-lg font-bold text-primary">S-Notevid 📝</h3>
+                    <span class="text-muted-foreground">|</span>
+                    <p class="text-muted-foreground">AI-Powered Educational Notes</p>
+                </div>
+                <div class="flex items-center space-x-6">
+                    <a href="#" class="text-muted-foreground hover:text-primary transition-colors text-sm">Terms of Service</a>
+                    <a href="#" class="text-muted-foreground hover:text-primary transition-colors text-sm">Privacy Policy</a>
+                    <div class="flex items-center space-x-3">
+                        <a href="#" class="text-muted-foreground hover:text-primary transition-colors">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="text-muted-foreground hover:text-primary transition-colors">
+                            <i class="fab fa-linkedin"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-6 pt-6 border-t border-border text-center">
+                <p class="text-sm text-muted-foreground">© 2024 S-Notevid. Built for students, by students. Empowering education through AI.</p>
+            </div>
+        </div>
+    </footer>
+    <!-- @END_COMPONENT: Footer -->
+
+    <script>
+        // @STATE: currentUser:object = null, currentPage:string = 'login'
+        
+        // Navigation functionality
+        function showPage(pageId) {
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // Show selected page
+            document.getElementById(pageId + '-page').classList.add('active');
+            
+            // Update navigation state
+            updateNavigation(pageId);
+        }
+        
+        function updateNavigation(currentPage) {
+            const homeNav = document.getElementById('home-nav');
+            const logoutBtn = document.getElementById('logout-btn');
+            const mobileLogoutBtn = document.getElementById('mobile-logout-btn');
+            
+            if (currentPage === 'login') {
+                if (homeNav) homeNav.style.display = 'none';
+                if (logoutBtn) logoutBtn.style.display = 'none';
+                if (mobileLogoutBtn) mobileLogoutBtn.style.display = 'none';
+            } else {
+                if (homeNav) homeNav.style.display = 'block';
+                if (logoutBtn) logoutBtn.style.display = 'block';
+                if (mobileLogoutBtn) mobileLogoutBtn.style.display = 'block';
+            }
+        }
+        
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+        }
+        
+        // Authentication functions
+        function login() {
+            // TODO: Implement Replit Auth integration
+            console.log('Initiating Replit Auth login...');
+            
+            // Simulate successful login
+            setTimeout(() => {
+                showPage('home');
+                // TODO: Set current user state from Replit Auth response
+            }, 1000);
+        }
+        
+        function logout() {
+            // TODO: Clear user session and redirect to login
+            console.log('Logging out user...');
+            showPage('login');
+        }
+        
+        // Note generation functionality
+        function generateNotes() {
+            const urlInput = document.getElementById('youtube-url');
+            const languageSelect = document.getElementById('language-select');
+            const loadingSection = document.getElementById('loading-section');
+            
+            // Basic validation
+            if (!urlInput.value.trim()) {
+                alert('Please enter a YouTube URL');
+                return;
+            }
+            
+            if (!urlInput.value.includes('youtube.com') && !urlInput.value.includes('youtu.be')) {
+                alert('Please enter a valid YouTube URL');
+                return;
+            }
+            
+            // Show loading state
+            loadingSection.classList.remove('hidden');
+            
+            // TODO: Implement actual API call to FastAPI backend
+            console.log('Generating notes for:', urlInput.value, 'in', languageSelect.value);
+            
+            // Simulate processing time
+            setTimeout(() => {
+                loadingSection.classList.add('hidden');
+                showResults('demo-video'); // Show results page with demo content
+            }, 3000);
+        }
+        
+        // Results page functionality
+        function showResults(videoId) {
+            // TODO: Load specific video results from backend
+            console.log('Loading results for video:', videoId);
+            showPage('results');
+        }
+        
+        // Interactive reference system
+        function highlightImage(imageId) {
+            // @FUNCTIONALITY: This should scroll to and highlight the corresponding image
+            const imageElement = document.getElementById(imageId);
+            if (imageElement) {
+                // Smooth scroll to image
+                imageElement.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center' 
+                });
+                
+                // Add highlight effect
+                const img = imageElement.querySelector('img');
+                if (img) {
+                    img.classList.add('highlight-image');
+                    setTimeout(() => {
+                        img.classList.remove('highlight-image');
+                    }, 2000);
+                }
+            }
+        }
+        
+        // Initialize page
+        (function() {
+            // Set initial page state
+            updateNavigation('login');
+            
+            // TODO: Check for existing Replit Auth session
+            // If user is already logged in, show home page instead
+            
+            console.log('S-Notevid application initialized');
+        })();
+        
+        // Handle responsive behavior
+        window.addEventListener('resize', function() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (window.innerWidth >= 768) {
+                mobileMenu.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

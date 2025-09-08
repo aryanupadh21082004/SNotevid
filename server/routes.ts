@@ -3,7 +3,7 @@ import express from "express";
 import { createServer, type Server } from "http";
 import path from "path";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated } from "./auth";
 import { generateNotes } from "./services/gemini";
 import { getVideoInfo, getVideoTranscript, createContentFromVideoInfo } from "./services/youtube.js";
 import { extractKeyFrames } from "./services/frameExtractor.js";
@@ -16,22 +16,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve static files for extracted frames
   app.use('/static', express.static(path.resolve(import.meta.dirname, "..", "static")));
 
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
-
   // Get user's video history
   app.get('/api/history', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user!.id;
       const history = await storage.getUserHistory(userId);
       res.json(history);
     } catch (error) {
@@ -43,7 +31,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get specific video results
   app.get('/api/results/:videoId', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user!.id;
       const { videoId } = req.params;
       
       const videoWithNotes = await storage.getVideoWithNotes(userId, videoId);
@@ -61,20 +49,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Process YouTube video
   app.post('/api/process-video', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.session.user!.id;
       const { url, language = 'en' } = req.body;
 
-      if (!url || !url.includes('youtube.com') && !url.includes('youtu.be')) {
+      if (!url) {
         return res.status(400).json({ message: "Invalid YouTube URL" });
       }
 
-      // Extract YouTube video ID
-      const videoIdMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
-      if (!videoIdMatch) {
+      // Robust YouTube ID extraction supporting youtube.com and youtu.be forms
+      const extractYouTubeId = (input: string): string | null => {
+        try {
+          const u = new URL(input);
+          if (u.hostname.includes('youtu.be')) {
+            const id = u.pathname.replace(/^\//, '').split('/')[0];
+            return id || null;
+          }
+          if (u.hostname.includes('youtube.com')) {
+            const id = u.searchParams.get('v');
+            return id || null;
+          }
+        } catch {
+          // Fallback: try to pull a 11-char video id pattern from raw input
+          const m = input.match(/[A-Za-z0-9_-]{11}/);
+          if (m) return m[0];
+        }
+        return null;
+      };
+
+      const youtubeId = extractYouTubeId(url);
+      if (!youtubeId) {
         return res.status(400).json({ message: "Could not extract video ID from URL" });
       }
-      
-      const youtubeId = videoIdMatch[1];
 
       // Check if we already have this video processed for this user and language
       let video = await storage.getVideo(youtubeId);
