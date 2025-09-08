@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import express from "express";
 import { createServer, type Server } from "http";
 import path from "path";
 import { storage } from "./storage";
@@ -13,10 +14,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
   // Serve static files for extracted frames
-  app.use('/static', (req, res, next) => {
-    const staticPath = path.resolve(import.meta.dirname, "..", "static");
-    require('express').static(staticPath)(req, res, next);
-  });
+  app.use('/static', express.static(path.resolve(import.meta.dirname, "..", "static")));
 
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
