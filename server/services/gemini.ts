@@ -20,23 +20,26 @@ export async function generateNotes(
 
     const targetLanguage = languageNames[language] || 'English';
     
-    const prompt = `You are an expert educational content creator. Please analyze the following video transcript and create comprehensive, well-structured study notes.
+    const isTranscriptContent = !transcript.includes('Note: This analysis is based on the video\'s title, description, and metadata');
+    
+    const prompt = `You are an expert educational content creator. Please analyze the following ${isTranscriptContent ? 'video transcript' : 'video information'} and create comprehensive, well-structured study notes.
 
 Video Title: ${videoTitle}
 Target Language: ${targetLanguage}
 
 Instructions:
 1. Create detailed, hierarchical study notes with clear headings and subheadings
-2. Include key concepts, definitions, and important points
+2. Include key concepts, definitions, and important points based on the available information
 3. Use bullet points and numbered lists for clarity
 4. Add reference markers like [1], [2], [3], etc. at key points where visual aids would be helpful
 5. Organize content logically with proper sections
-6. If the transcript is not in ${targetLanguage}, translate the content while maintaining accuracy
+6. If the content is not in ${targetLanguage}, translate while maintaining accuracy
 7. Focus on educational value and comprehension
 8. Include a "Key Takeaways" section at the end
 9. Use markdown formatting for better structure
+${!isTranscriptContent ? '10. Since transcript is not available, create comprehensive notes based on the title, description, and metadata provided. Make educated inferences about likely content topics and structure the notes as if explaining the subject matter covered in the video.' : ''}
 
-Transcript:
+${isTranscriptContent ? 'Transcript:' : 'Video Information:'}
 ${transcript}
 
 Please generate comprehensive study notes in ${targetLanguage}:`;
